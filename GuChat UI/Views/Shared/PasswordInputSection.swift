@@ -60,13 +60,12 @@ struct PasswordInputSection: View {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(.systemGray4)))
             
             // Password mismatch error test
-            if showPasswordMismatchError && !viewModel.passwordsMatch{
-                Text("Password do not match")
+            if !viewModel.passwordsMatch {
+                Text("Passwords do not match")
                     .foregroundColor(.red)
                     .font(.footnote)
                     .padding(.top, 4)
             }
-            
         }
     }
 }

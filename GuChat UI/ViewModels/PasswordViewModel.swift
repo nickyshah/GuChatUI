@@ -3,13 +3,19 @@ import Combine
 
 class PasswordViewModel: ObservableObject {
     @Published var password: String = ""{
-        didSet{
-            ValidatePassWord()
-        }
+        didSet{ ValidatePassWord() }
     }
-    @Published var confirmPassword: String = ""
+    @Published var confirmPassword: String = ""{
+        didSet{ ValidatePassWord() }
+    }
     @Published var showingPassword: Bool = false
     @Published var showingConfirmPassword: Bool = false
+    
+    @Published var passwordsMatch: Bool = true
+
+    private func validatePasswords() {
+        passwordsMatch = confirmPassword.isEmpty || password == confirmPassword
+    }
     
     // Validation flags
         @Published var hasMinLength = false
@@ -28,16 +34,14 @@ class PasswordViewModel: ObservableObject {
         password == confirmPassword && !password.isEmpty
     }
     
-    var passwordsMatch: Bool {
-        !confirmPassword.isEmpty && password == confirmPassword
-    }
-    
     private func ValidatePassWord(){
         hasMinLength = password.count >= 8
         hasLowercase = password.range(of: "[a-z]", options: .regularExpression) != nil
         hasUppercase = password.range(of: "[A-Z]", options: .regularExpression) != nil
         hasNumber = password.range(of: "[0-9]", options: .regularExpression) != nil
         hasSpecialChar = password.range(of: "[!@#$%^&*]", options: .regularExpression) != nil
+        
+        passwordsMatch = confirmPassword.isEmpty || password == confirmPassword
     }
 }
 
