@@ -39,7 +39,7 @@ struct EntryPageView: View {
                                     .foregroundColor(.white)
                                     .cornerRadius(5)
                             }
-                            
+//                            
 //                             Navigating to the Login Page
                             NavigationLink(destination: LoginPageView()){
                                 Text("LogIn")

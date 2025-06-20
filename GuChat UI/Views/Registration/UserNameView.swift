@@ -21,7 +21,7 @@ struct UsernameView: View {
                 .padding(.horizontal)
                 .padding(.top, 10)
                 
-                NavigationLink(destination: CreateAccountView(), isActive: $goback){}
+//                NavigationLink(destination: CreateAccountView(), isActive: $goback){}
                 
                 // Title
                 Text("Enter username")

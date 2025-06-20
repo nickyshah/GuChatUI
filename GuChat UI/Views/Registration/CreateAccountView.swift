@@ -1,17 +1,32 @@
 import SwiftUI
 
 struct CreateAccountView: View {
-    @StateObject private var countryVM = CountryCodeViewModel()
-    @State private var selectedCode: CountryCode?
-    @State private var mobileNumber: String = ""
     @State private var agreesToTerms: Bool = false
     @Environment(\.dismiss) private var dismiss
+
+    @State private var mobileNumber: String = ""
+    @State private var countryCode : String = "+61"
+    @State private var countryFlag : String = "🇦🇺"
+    @State private var searchText : String = ""
+    @State private var presentCountrySheet: Bool = false
+    
+    private var allCountries: [CPData]{
+        if self.searchText.isEmpty {
+            return CPData.allCountry
+        } else {
+            return CPData.allCountry.filter{
+                $0.name.contains(self.searchText)
+            }
+        }
+        
+    }
     
     var body: some View {
         VStack(spacing: 20) {
+
             // Back button
             HStack {
-                Button(action: { dismiss() }) {
+                NavigationLink(destination: EntryPageView()) {
                     Image(systemName: "arrow.backward")
                         .font(.title2)
                         .foregroundColor(.black)
@@ -20,123 +35,115 @@ struct CreateAccountView: View {
             }
             .padding(.horizontal)
             .padding(.top, 10)
-            
+
             // Title
             Text("Create account")
                 .font(.largeTitle)
                 .fontWeight(.medium)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-            
-            // Loading/Error state
-            Group {
-                if countryVM.isLoading && countryVM.codes.isEmpty {
-                    ProgressView("Loading country codes...")
-                } else if let error = countryVM.errorMessage {
-                    Text(error)
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-            }
-            .padding()
-            
-            // Mobile number section
+
             VStack(alignment: .leading, spacing: 10) {
                 Text("Mobile Number")
                     .fontWeight(.medium)
                     .font(.system(size: 22))
+                    .foregroundColor(.black)
                 
-                HStack(spacing: 10) {
-                    // Country Code Picker
-                    Menu {
-                        ForEach(countryVM.codes) { code in
-                            Button(action: {
-                                selectedCode = code
-                            }) {
-                                HStack(spacing: 12) {
-                                    Text(code.flag)
-                                        .frame(width: 30)
-                                    Text(code.dialCode)
-                                        .frame(width: 50, alignment: .leading)
-                                    Text(code.name)
-                                        .frame(minWidth: 150, alignment: .leading)
-                                        .lineLimit(1)
-                                }
-                                .frame(width: 250)
-                                .contentShape(Rectangle())
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text(selectedCode?.flag ?? "🌐")
-                            Text(selectedCode?.dialCode ?? "+1")
-                            Image(systemName: "chevron.down")
-                                .imageScale(.small)
-                        }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 12)
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
+                HStack{
+                    Button{
+                        print("Open Country Picker ")
+                        self.presentCountrySheet = true
+                    }label: {
+                        Text("\(countryFlag) \(countryCode)")
+                            .padding(10)
+                            .frame(minWidth:80, minHeight: 40)
+                            .background(Color(.white), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .foregroundColor(.black)
                     }
-                    .menuStyle(BorderlessButtonMenuStyle())
-                    .frame(width: 120)
-                    
-                    // Mobile Number Field
-                    TextField("Phone number", text: $mobileNumber)
-                        .keyboardType(.phonePad)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
+                    TextField("Enter your mobile number", text: $mobileNumber)
+                        .keyboardType(.numberPad)
+                        .padding(10)
+                        .frame(minWidth:150, minHeight: 40)
+                        .background(Color(.white), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
+                .padding(.horizontal, 5)
+                
             }
             .padding(.horizontal)
-            
-            // Terms and Policies
+            .sheet(isPresented: $presentCountrySheet){
+               NavigationStack{
+                    List(allCountries) {
+                        model in
+                        HStack{
+                            Text(model.flag)
+                            Text(model.name).font(.body)
+                            Spacer()
+                            Text(model.dial_code).foregroundColor(Color(.systemGray3))
+                        }
+                        .onTapGesture {
+                            self.countryFlag = model.flag
+                            self.countryCode = model.dial_code
+                            self.presentCountrySheet = false
+                        }
+                    }
+               }
+               .searchable(text: $searchText,  prompt: "Your Country Name")
+               .presentationDetents([.fraction(0.77)])
+            }
+
+            // Terms checkbox and text with links — no + concatenation, use HStack + Buttons + Text
             HStack(alignment: .center, spacing: 8) {
-                Button(action: { agreesToTerms.toggle() }) {
+                Button(action: {
+                    agreesToTerms.toggle()
+                }) {
                     Image(systemName: agreesToTerms ? "checkmark.square.fill" : "square")
                         .foregroundColor(agreesToTerms ? .blue : .gray)
+                        .font(.title3)
                 }
                 
-                Text("I agree to the ") +
-                Text("Terms").underline().foregroundColor(.blue) +
-                Text(" and ") +
-                Text("Privacy Policy").underline().foregroundColor(.blue)
+                HStack(spacing:0){
+                    Text("By clicking you agree to ") +
+                    Text("[Terms of Service]()")
+                        .foregroundStyle(.blue) +
+                    Text(" and ") +
+                    Text("[Privacy Policy]()")
+                        .foregroundStyle(.blue)
+                }
             }
-            .font(.footnote)
             .padding(.horizontal)
-            
+            Text("------------------or------------------")
+                .foregroundColor(.gray)
+                .padding(.vertical, 10)
+
+            Button("Create account with Email address") {
+                // Action required
+            }
+            .font(.headline)
+            .foregroundColor(.blue)
+
             Spacer()
-            
-            // Action buttons
+
             VStack(spacing: 15) {
                 Button(action: {
-                    print("Creating account with: \(selectedCode?.dialCode ?? "") \(mobileNumber)")
+                    print("Create account tapped with mobile: \(mobileNumber), agreed: \(agreesToTerms)")
                 }) {
                     Text("Create account")
+                        .font(.headline)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background((agreesToTerms && !mobileNumber.isEmpty && selectedCode != nil) ? Color.blue : Color.gray)
-                        .foregroundColor(.white)
+                        .background(agreesToTerms && !mobileNumber.isEmpty ? Color.blue : Color.gray)
                         .cornerRadius(10)
                 }
-                .disabled(!agreesToTerms || mobileNumber.isEmpty || selectedCode == nil)
-                
+                .disabled(!agreesToTerms || mobileNumber.isEmpty)
+
                 Button("Login") {
                     print("Login tapped")
                 }
+                .font(.headline)
+                .foregroundColor(.blue)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .foregroundColor(.blue)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.blue, lineWidth: 1)
@@ -147,35 +154,14 @@ struct CreateAccountView: View {
         }
         .navigationBarHidden(true)
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
-        .onAppear {
-            countryVM.load()
-            if selectedCode == nil {
-                selectedCode = countryVM.codes.first(where: { $0.countryCode == "US" }) ?? countryVM.codes.first
-            }
-        }
     }
 }
 
-struct CountryCodeRow: View {
-    let code: CountryCode
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(code.flag)
-                .frame(width: 30)
-            Text(code.dialCode)
-                .frame(width: 50, alignment: .leading)
-            Text(code.name)
-                .frame(minWidth: 150, alignment: .leading)
-                .lineLimit(1)
+// SwiftUI Preview
+struct CreateAccountView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            CreateAccountView()
         }
-        .frame(width: 350)
-        .contentShape(Rectangle())
     }
 }
-
-#Preview{
-  CreateAccountView()
-}
-
-
