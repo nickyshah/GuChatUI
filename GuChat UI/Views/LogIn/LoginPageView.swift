@@ -1,14 +1,29 @@
 import SwiftUI
 
 struct LoginPageView: View {
-    @State private var mobileNumber: String = ""
     @State private var password: String = ""
     @State private var rememberMe: Bool = false
     @State private var showingPassword: Bool = false
 
     @State private var selectedCountryCode: String = "+61" // Default to Australia
-
     let availableCountryCodes = ["+61 Australia", "+1 United States", "+44 United Kingdom"]
+    
+    @State private var mobileNumber: String = ""
+    @State private var countryCode : String = "+61"
+    @State private var countryFlag : String = "🇦🇺"
+    @State private var searchText : String = ""
+    @State private var presentCountrySheet: Bool = false
+    
+    private var allCountries: [CPData]{
+        if self.searchText.isEmpty {
+            return CPData.allCountry
+        } else {
+            return CPData.allCountry.filter{
+                $0.name.contains(self.searchText)
+            }
+        }
+        
+    }
 
     var body: some View {
         NavigationStack{
@@ -35,73 +50,33 @@ struct LoginPageView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 30)
 
-                // Form Fields
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Mobile Number")
-                        .fontWeight(.bold)
-                        .font(.system(size: 22))
-                        .foregroundColor(.black)
-
-                    HStack(spacing: 10) {
-                        // Country Code Menu
-                        Menu {
-                            ForEach(availableCountryCodes, id: \.self) { code in
-                                Button(action: {
-                                    if let spaceIndex = code.firstIndex(of: " ") {
-                                        selectedCountryCode = String(code[..<spaceIndex])
-                                    } else {
-                                        selectedCountryCode = code
-                                    }
-                                }) {
-                                    Text(code)
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "flag.fill")
-                                    .resizable()
-                                    .frame(width: 28, height: 18)
-                                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                                    .foregroundColor(.gray)
-
-                                Text(selectedCountryCode)
+                    // Form Fields
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Mobile Number")
+                            .fontWeight(.bold)
+                            .font(.system(size: 22))
+                            .foregroundColor(.black)
+                        
+                        HStack{
+                            Button{
+                                print("Open Country Picker ")
+                                self.presentCountrySheet = true
+                            }label: {
+                                Text("\(countryFlag) \(countryCode)")
+                                    .padding(10)
+                                    .frame(minWidth:80, minHeight: 40)
+                                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                                     .foregroundColor(.black)
-
-                                Image(systemName: "chevron.down")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
                             }
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 10)
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
-                        }
-
-                        // Mobile Number Input
-                        ZStack(alignment: .leading) {
-                            if mobileNumber.isEmpty {
-                                Text("Enter mobile number")
-                                    .foregroundColor(.gray)
-                                    .padding(.leading, 5)
-                            }
-
-                            TextField("", text: $mobileNumber)
+                            TextField("Enter Mobile Number", text: $mobileNumber)
                                 .keyboardType(.numberPad)
-                                .foregroundColor(.black)
-                                
+                                .padding(10)
+                                .frame(minWidth:150, minHeight: 40)
+                                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            
                         }
-                        .padding(10)
-                        .background(Color.white)
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
-                    }
+                    
+                    
 
                     Text("Password")
                         .fontWeight(.bold)
@@ -192,10 +167,25 @@ struct LoginPageView: View {
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
-            .onTapGesture {
-#if canImport(UIKit)
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-#endif
+            .sheet(isPresented: $presentCountrySheet){
+               NavigationStack{
+                    List(allCountries) {
+                        model in
+                        HStack{
+                            Text(model.flag)
+                            Text(model.name).font(.body)
+                            Spacer()
+                            Text(model.dial_code).foregroundColor(Color(.systemGray3))
+                        }
+                        .onTapGesture {
+                            self.countryFlag = model.flag
+                            self.countryCode = model.dial_code
+                            self.presentCountrySheet = false
+                        }
+                    }
+               }
+               .searchable(text: $searchText,  prompt: "Your Country Name")
+               .presentationDetents([.fraction(0.77)])
             }
         }
     }
