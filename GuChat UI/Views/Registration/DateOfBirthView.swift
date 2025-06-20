@@ -116,7 +116,7 @@ struct DatePickerPopUpView: View {
     var onDateSelected: (Date) -> Void
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             Color.black.opacity(0.4)
                 .edgesIgnoringSafeArea(.all)
                 .onTapGesture {
@@ -125,7 +125,7 @@ struct DatePickerPopUpView: View {
 
             VStack {
                 DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
+                    .datePickerStyle(.wheel)
                     .labelsHidden()
 
                 Divider()
@@ -139,6 +139,7 @@ struct DatePickerPopUpView: View {
                 .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(8)
+                
             }
             .padding()
             .background(Color.white)
