@@ -32,7 +32,7 @@ struct DateOfBirthView: View {
                         .padding(.horizontal)
 
                     // Date of Birth input section
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Date of Birth")
                             .font(.headline)
                             .foregroundColor(.black)
@@ -57,7 +57,7 @@ struct DateOfBirthView: View {
                                 isDatePickerShowing = true
                             }) {
                                 Image(systemName: "calendar")
-                                    .foregroundColor(Color.gray.opacity(0.4))
+                                    .foregroundColor(Color.gray.opacity(0.8))
                                     .font(.title2)
                                     .scaleEffect(2)
                                     .padding(10)
@@ -79,10 +79,11 @@ struct DateOfBirthView: View {
                     }) {
                         Text("Continue")
                             .font(.headline)
-                            .foregroundColor(.white)
+//                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(dateOfBirth.isEmpty ? Color.gray : Color.blue)
+                            .foregroundColor(.black)
+                            .background(dateOfBirth.isEmpty ? Color(.systemGray5) : Color.blue)
                             .cornerRadius(10)
                     }
                     .disabled(dateOfBirth.isEmpty)

@@ -21,17 +21,17 @@ struct UsernameView: View {
                 .padding(.horizontal)
                 .padding(.top, 10)
                 
-//                NavigationLink(destination: CreateAccountView(), isActive: $goback){}
+                NavigationLink(destination: CreateAccountView(), isActive: $goback){}
                 
                 // Title
-                Text("Enter username")
+                Text("Enter Username")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                 
                 // Username input section
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Username")
                         .font(.headline)
                         .foregroundColor(.black)

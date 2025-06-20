@@ -34,7 +34,7 @@ struct EntryPageView: View {
                             NavigationLink(destination: CreateAccountView()){
                                 Text("Create Account")
                                     .frame(width: 360, height: 50)
-                                    .font(.system(size: 24))
+                                    .font(.system(size: 18))
                                     .background(Color.blue)
                                     .foregroundColor(.white)
                                     .cornerRadius(5)
@@ -42,9 +42,9 @@ struct EntryPageView: View {
 //                            
 //                             Navigating to the Login Page
                             NavigationLink(destination: LoginPageView()){
-                                Text("LogIn")
+                                Text("Login")
                                     .frame(width: 360, height: 50)
-                                    .font(.system(size: 24))
+                                    .font(.system(size: 18))
                                     .background(Color.gray.opacity(0.4))
                                     .foregroundColor(.black)
                                 .cornerRadius(5)}

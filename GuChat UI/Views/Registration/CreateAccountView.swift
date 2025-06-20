@@ -3,6 +3,7 @@ import SwiftUI
 struct CreateAccountView: View {
     @State private var agreesToTerms: Bool = false
     @Environment(\.dismiss) private var dismiss
+    @State private var navigate = false
 
     @State private var mobileNumber: String = ""
     @State private var countryCode : String = "+61"
@@ -57,14 +58,14 @@ struct CreateAccountView: View {
                         Text("\(countryFlag) \(countryCode)")
                             .padding(10)
                             .frame(minWidth:80, minHeight: 40)
-                            .background(Color(.white), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .foregroundColor(.black)
                     }
                     TextField("Enter your mobile number", text: $mobileNumber)
                         .keyboardType(.numberPad)
                         .padding(10)
                         .frame(minWidth:150, minHeight: 40)
-                        .background(Color(.white), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .padding(.horizontal, 5)
                 
@@ -137,24 +138,24 @@ struct CreateAccountView: View {
                 }
                 .disabled(!agreesToTerms || mobileNumber.isEmpty)
 
-                Button("Login") {
-                    print("Login tapped")
+                
+                NavigationLink(destination: LoginPageView()) {
+                    Text("Login")
+                        .frame(maxWidth: .infinity)
+                        .font(.title2)
+                        .foregroundColor(.black)
+                        .frame(minWidth:150, minHeight: 50)
+                        .background(Color(.systemGray4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        
                 }
-                .font(.headline)
-                .foregroundColor(.blue)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.blue, lineWidth: 1)
-                )
             }
             .padding(.horizontal)
             .padding(.bottom, 20)
         }
         .navigationBarHidden(true)
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(Color.white.ignoresSafeArea())
     }
+    
 }
 
 // SwiftUI Preview

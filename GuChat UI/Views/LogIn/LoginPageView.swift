@@ -100,12 +100,8 @@ struct LoginPageView: View {
                         }
                     }
                     .padding(10)
-                    .background(Color.white)
+                    .background(Color(.systemGray6))
                     .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(.systemGray4), lineWidth: 1)
-                    )
 
                     // Remember Me + Forgot Password
                     HStack {
@@ -139,7 +135,7 @@ struct LoginPageView: View {
                         print("Login tapped")
                     }) {
                         Text("Login")
-                            .font(.headline)
+                            .font(.title2)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -147,19 +143,14 @@ struct LoginPageView: View {
                             .cornerRadius(10)
                     }
 
-                    Button(action: {
-                        print("Create account tapped")
-                    }) {
-                        Text("Create account")
-                            .font(.headline)
-                            .foregroundColor(.blue)
+                    NavigationLink(destination: CreateAccountView()) {
+                        Text("Create Account")
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.white)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.blue, lineWidth: 2)
-                            )
+                            .font(.title2)
+                            .foregroundColor(.black)
+                            .frame(minWidth:150, minHeight: 50)
+                            .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            
                     }
                 }
                 .padding(.horizontal)
@@ -211,6 +202,6 @@ struct CheckboxToggleStyle: ToggleStyle {
 struct LoginPageView_Previews: PreviewProvider {
     static var previews: some View {
         LoginPageView()
-            .preferredColorScheme(.light)
+//            .preferredColorScheme(.light)
     }
 }
