@@ -126,7 +126,7 @@ class APIManager: ObservableObject {
     // --- API Methods for the Auth Flow ---
     
     func requestOTP(mobileNumber: String) async throws -> APIResponse {
-        guard let url = URL(string: "\(baseURL)/auth/request-otp")
+        guard let url = URL(string: "\(baseURL)api/user/verification/get")
         else {
             throw NetworkError.invalidURL
         }
@@ -135,7 +135,7 @@ class APIManager: ObservableObject {
     }
     
     func verifyOTP(mobileNumber: String, otp: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/auth/verify-otp")
+        guard let url = URL(string: "\(baseURL)api/user/verification/check")
         else {
             throw NetworkError.invalidURL
         }
@@ -150,13 +150,13 @@ class APIManager: ObservableObject {
     }
     
     func checkUsernameAvailability(username: String) async throws -> UsernameAvailabilityResponse {
-        guard let url = URL(string: "\(baseURL)/user/check-username") else { throw NetworkError.invalidURL }
+        guard let url = URL(string: "\(baseURL)api/user/checkUsername") else { throw NetworkError.invalidURL }
         let body: [String: String] = ["username": username]
         return try await performRequest(url: url, method: "POST", body: body)
     }
     
     func registerUser(mobileNumber: String, username: String, dateOfBirth: Date, password: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/auth/register") else { throw NetworkError.invalidURL }
+        guard let url = URL(string: "\(baseURL)api/user/signup") else { throw NetworkError.invalidURL }
 
         let formatter = ISO8601DateFormatter() // Use ISO 8601 for API dates
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -178,7 +178,7 @@ class APIManager: ObservableObject {
     }
     
     func login(mobileNumber: String, password: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/auth/login") else { throw NetworkError.invalidURL }
+        guard let url = URL(string: "\(baseURL)api/user/signin") else { throw NetworkError.invalidURL }
         let body: [String: String] = ["mobileNumber": mobileNumber, "password": password]
         let response: AuthResponse = try await performRequest(url: url, method: "POST", body: body)
         // Store token and userId upon successful login

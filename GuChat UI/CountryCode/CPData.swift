@@ -32,3 +32,41 @@ extension Bundle {
     }
 }
 
+struct CountryCode: Identifiable, Hashable{
+    let id: String         // Use CPData's ID
+    let name: String
+    let dialCode: String
+    let flag: String
+    // Added pattern and limit as these are useful properties
+    let pattern: String
+    let limit: Int
+    
+    // Convenience initializer to create from CPData
+    init(cpData: CPData){
+        self.id = cpData.id
+        self.name = cpData.name
+        self.dialCode = cpData.dial_code
+        self.flag = cpData.flag
+        self.pattern = cpData.pattern
+        self.limit = cpData.limit
+    }
+}
+
+final class CountryCodeViewModel: ObservableObject {
+    @Published var countryCodes: [CountryCode] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    
+    init() {
+        self.countryCodes = CPData.allCountry.map{ CountryCode(cpData: $0) }
+        self.isLoading = false
+    }
+    
+    func load(){
+        if countryCodes.isEmpty{
+            self.countryCodes = CPData.allCountry.map{ CountryCode(cpData: $0) }
+        }
+        self.isLoading = false
+        self.errorMessage = nil
+    }
+}
