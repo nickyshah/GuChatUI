@@ -1,14 +1,19 @@
 import SwiftUI
 
 struct CreateAccountView: View {
-    @State private var agreesToTerms: Bool = false
-    @Environment(\.dismiss) private var dismiss
-    @State private var navigate = false
-
-    @State private var mobileNumber: String = ""
-    @State private var countryCode : String = "+61"
-    @State private var countryFlag : String = "🇦🇺"
+    
+    @EnvironmentObject var authFlowManager: AuthFlowManager // <-- Add this
+    @StateObject private var countryVM = CountryCodeViewModel() // Keep ViewModel for countries
     @State private var searchText : String = ""
+    
+    @State private var agreesToTerms: Bool = false
+//
+//    @Environment(\.dismiss) private var dismiss
+//    @State private var navigate = false
+//
+//    @State private var mobileNumber: String = ""
+//    @State private var countryCode : String = "+61"
+//    @State private var countryFlag : String = "🇦🇺"
     @State private var presentCountrySheet: Bool = false
     
     private var allCountries: [CPData]{
@@ -55,13 +60,13 @@ struct CreateAccountView: View {
                         print("Open Country Picker ")
                         self.presentCountrySheet = true
                     }label: {
-                        Text("\(countryFlag) \(countryCode)")
+                        Text("\(authFlowManager.countryFlag) \(authFlowManager.countryCode)")
                             .padding(10)
                             .frame(minWidth:80, minHeight: 40)
                             .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .foregroundColor(.black)
                     }
-                    TextField("Enter your mobile number", text: $mobileNumber)
+                    TextField("Enter your mobile number", text: $authFlowManager.mobileNumber)
                         .keyboardType(.numberPad)
                         .padding(10)
                         .frame(minWidth:150, minHeight: 40)
@@ -82,8 +87,8 @@ struct CreateAccountView: View {
                             Text(model.dial_code).foregroundColor(Color(.systemGray3))
                         }
                         .onTapGesture {
-                            self.countryFlag = model.flag
-                            self.countryCode = model.dial_code
+                            authFlowManager.countryFlag = model.flag // <-- Update AuthFlowManager
+                            authFlowManager.countryCode = model.dial_code // <-- Update AuthFlowManager
                             self.presentCountrySheet = false
                         }
                     }
@@ -126,18 +131,29 @@ struct CreateAccountView: View {
 
             VStack(spacing: 15) {
                 Button(action: {
-                    print("Create account tapped with mobile: \(mobileNumber), agreed: \(agreesToTerms)")
+                    Task{
+                        await authFlowManager.requestOTP()
+                    }
                 }) {
-                    Text("Create account")
+                    Text(authFlowManager.isLoading ? "Sending OTP..." : "Create account")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(agreesToTerms && !mobileNumber.isEmpty ? Color.blue : Color.gray)
+                        .background(agreesToTerms && !authFlowManager.mobileNumber.isEmpty && !authFlowManager.isLoading ? Color.blue : Color.gray)
                         .cornerRadius(10)
                 }
-                .disabled(!agreesToTerms || mobileNumber.isEmpty)
+                .disabled(!agreesToTerms || authFlowManager.mobileNumber.isEmpty || authFlowManager.isLoading)
 
+                
+                // Display general error message
+                if let errorMessage = authFlowManager.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                }
                 
                 NavigationLink(destination: LoginPageView()) {
                     Text("Login")
@@ -154,6 +170,16 @@ struct CreateAccountView: View {
         }
         .navigationBarHidden(true)
         .background(Color.white.ignoresSafeArea())
+        .onAppear {
+            countryVM.load() // Load country codes when view appears
+            // Set default selected code to Australia if available and not already set
+            if authFlowManager.countryCode == "+61" && authFlowManager.countryFlag == "🇦🇺" && authFlowManager.mobileNumber.isEmpty {
+                 if let australia = CPData.allCountry.first(where: { $0.name == "Australia" }) {
+                     authFlowManager.countryCode = australia.dial_code
+                     authFlowManager.countryFlag = australia.flag
+                 }
+            }
+        }
     }
     
 }

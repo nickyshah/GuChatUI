@@ -20,7 +20,7 @@ struct LoginPageView: View {
     }
     
     private var topCountries: [CPData] {
-        let topDialCodes = ["+61", "+91", "+1"] // Example top countries: Australia, India, US
+        let topDialCodes = ["+61", "+1"] // Example top countries: Australia, India, US
         return CPData.allCountry.filter { topDialCodes.contains($0.dial_code) }
     }
 
@@ -145,12 +145,9 @@ struct LoginPageView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(
-                                                (authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
-                                                ? Color.gray
-                                                : Color.blue
-                                            )
+                                        RoundedRectangle(cornerRadius: 10).fill(
+                                            (authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
+                                                ? Color.gray : Color.blue )
                                     )
 
                     }
@@ -172,27 +169,6 @@ struct LoginPageView: View {
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
-//            .sheet(isPresented: $presentCountrySheet){
-//               NavigationStack{
-//                    List(allCountries) {
-//                        country in
-//                        HStack{
-//                            Text(country.flag)
-//                            Text(country.name).font(.body)
-//                            Spacer()
-//                            Text(country.dial_code).foregroundColor(Color(.systemGray3))
-//                        }
-//                        .onTapGesture {
-//                            authFlowManager.countryFlag = country.flag
-//                            authFlowManager.countryCode = country.dial_code
-//                            presentCountrySheet = false
-//                        }
-//                    }
-//               }
-//               .searchable(text: $searchText,  prompt: "Your Country Name")
-//               .presentationDetents([.fraction(0.76)])
-//            }
-        
             .sheet(isPresented: $presentCountrySheet) {
                 NavigationStack {
                     List {
@@ -232,7 +208,7 @@ struct LoginPageView: View {
                     }
                 }
                 .searchable(text: $searchText, prompt: "Your Country Name")
-                .presentationDetents([.fraction(0.76)])
+                .presentationDetents([.fraction(0.75)])
             }
 
         }
