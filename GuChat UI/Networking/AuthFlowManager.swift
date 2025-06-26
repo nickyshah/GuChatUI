@@ -36,7 +36,7 @@ class AuthFlowManager: ObservableObject{
     
     init(){
         // Initialize the flow: if a token exists, go to authenticated state
-        if APIManager.shared.authToken != nil{
+        if APIManager.shared.authToken != nil {
             _currentStep = Published(initialValue: .authenticated)
         } else {
             _currentStep = Published(initialValue: .mobileRegistration)
@@ -48,7 +48,7 @@ class AuthFlowManager: ObservableObject{
                 DispatchQueue.main.async{
                     if token != nil && self?.currentStep != .authenticated{
                         self?.currentStep = .authenticated   // Transition to authenticated if token appears
-                    } else if token == nil && self?.currentStep != .authenticated{
+                    } else if token == nil && self?.currentStep == .authenticated{
                         self?.resetFlow()
                     }
                 }

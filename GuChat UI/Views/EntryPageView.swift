@@ -64,3 +64,56 @@ struct EntryPageView: View {
     EntryPageView()
 }
 
+
+
+//import SwiftUI
+//
+//struct EntryPageView: View {
+//    @State private var showAuthFlow = false
+//
+//    var body: some View {
+//        Group {
+//            if showAuthFlow {
+//                AuthenticationFlowView() // This handles the login/registration flow
+//            } else {
+//                welcomeView
+//                    .onAppear {
+//                        // Automatically transition after 2 seconds
+//                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+//                            withAnimation {
+//                                showAuthFlow = true
+//                            }
+//                        }
+//                    }
+//            }
+//        }
+//    }
+//
+//    var welcomeView: some View {
+//        ZStack {
+//            Color.white
+//                .ignoresSafeArea()
+//
+//            VStack(spacing: 30) {
+//                Image("GU_Chat_Blue")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(width: 160, height: 160)
+//
+//                VStack(spacing: 10) {
+//                    Text("Welcome")
+//                        .font(.system(size: 32, weight: .medium))
+//                        .foregroundColor(.black)
+//
+//                    Text("Create your profile in GU Chat")
+//                        .font(.system(size: 24, weight: .light))
+//                        .foregroundColor(.black)
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//#Preview {
+//    EntryPageView()
+//}

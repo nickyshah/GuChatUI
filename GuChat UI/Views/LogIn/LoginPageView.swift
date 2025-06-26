@@ -1,18 +1,12 @@
 import SwiftUI
 
 struct LoginPageView: View {
-    @State private var password: String = ""
     @State private var rememberMe: Bool = false
     @State private var showingPassword: Bool = false
-
-    @State private var selectedCountryCode: String = "+61" // Default to Australia
-    let availableCountryCodes = ["+61 Australia", "+1 United States", "+44 United Kingdom"]
-    
-    @State private var mobileNumber: String = ""
-    @State private var countryCode : String = "+61"
-    @State private var countryFlag : String = "🇦🇺"
     @State private var searchText : String = ""
     @State private var presentCountrySheet: Bool = false
+    
+    @EnvironmentObject var authFlowManager: AuthFlowManager
     
     private var allCountries: [CPData]{
         if self.searchText.isEmpty {
@@ -24,14 +18,20 @@ struct LoginPageView: View {
         }
         
     }
+    
+    private var topCountries: [CPData] {
+        let topDialCodes = ["+61", "+91", "+1"] // Example top countries: Australia, India, US
+        return CPData.allCountry.filter { topDialCodes.contains($0.dial_code) }
+    }
 
     var body: some View {
-        NavigationStack{
             VStack(alignment: .leading, spacing: 0) {
-
-                // MARK: - Top Bar
+                
                 HStack {
-                    NavigationLink(destination: EntryPageView()) {
+                    Button(action: {
+                        authFlowManager.currentStep = .mobileRegistration // Go back to registration start
+                        authFlowManager.errorMessage = nil // Clear error
+                    }) {
                         Image(systemName: "arrow.backward")
                             .font(.title2)
                             .foregroundColor(.black)
@@ -39,7 +39,7 @@ struct LoginPageView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                .padding(.top, 20)
+                .padding(.top, 10)
 
                 // Title
                 Text("Login")
@@ -59,16 +59,15 @@ struct LoginPageView: View {
                         
                         HStack{
                             Button{
-                                print("Open Country Picker ")
                                 self.presentCountrySheet = true
                             }label: {
-                                Text("\(countryFlag) \(countryCode)")
+                                Text("\(authFlowManager.countryFlag) \(authFlowManager.countryCode)")
                                     .padding(10)
                                     .frame(minWidth:80, minHeight: 40)
                                     .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                                     .foregroundColor(.black)
                             }
-                            TextField("Enter Mobile Number", text: $mobileNumber)
+                            TextField("Enter Mobile Number", text: $authFlowManager.mobileNumber)
                                 .keyboardType(.numberPad)
                                 .padding(10)
                                 .frame(minWidth:150, minHeight: 40)
@@ -85,10 +84,10 @@ struct LoginPageView: View {
 
                     HStack {
                         if showingPassword {
-                            TextField("Enter password", text: $password)
+                            TextField("Enter password", text: $authFlowManager.password)
                                 .foregroundColor(.black)
                         } else {
-                            SecureField("Enter password", text: $password)
+                            SecureField("Enter password", text: $authFlowManager.password)
                                 .foregroundColor(.black)
                         }
 
@@ -123,6 +122,13 @@ struct LoginPageView: View {
                         }
                     }
                     .padding(.horizontal, 5)
+                        
+                        if let errorMessage = authFlowManager.errorMessage {
+                            Text(errorMessage)
+                                .foregroundColor(.red)
+                                .font(.caption)
+                                .padding(.top, 4)
+                        }
                 }
                 .padding(.horizontal)
 
@@ -131,56 +137,106 @@ struct LoginPageView: View {
                 //  Action Buttons
                 VStack(spacing: 15) {
                     Button(action: {
-//                        verification needs to be done for login
-                        print("Login tapped")
+                        Task{ await authFlowManager.login() }
                     }) {
-                        Text("Login")
+                        Text(authFlowManager.isLoading ? "Logging in..." : "Login")
                             .font(.title2)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
-                            .cornerRadius(10)
-                    }
+                            .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(
+                                                (authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
+                                                ? Color.gray
+                                                : Color.blue
+                                            )
+                                    )
 
-                    NavigationLink(destination: CreateAccountView()) {
-                        Text("Create Account")
-                            .frame(maxWidth: .infinity)
-                            .font(.title2)
-                            .foregroundColor(.black)
-                            .frame(minWidth:150, minHeight: 50)
-                            .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            
                     }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
+                    .disabled(authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
+
+                    Button {
+                            authFlowManager.currentStep = .mobileRegistration
+                        } label: {
+                            Text("Create Account")
+                                .frame(maxWidth: .infinity)
+                                .font(.title2)
+                                .foregroundColor(.black)
+                                .frame(minHeight: 50)
+                                .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
-            .sheet(isPresented: $presentCountrySheet){
-               NavigationStack{
-                    List(allCountries) {
-                        model in
-                        HStack{
-                            Text(model.flag)
-                            Text(model.name).font(.body)
-                            Spacer()
-                            Text(model.dial_code).foregroundColor(Color(.systemGray3))
+//            .sheet(isPresented: $presentCountrySheet){
+//               NavigationStack{
+//                    List(allCountries) {
+//                        country in
+//                        HStack{
+//                            Text(country.flag)
+//                            Text(country.name).font(.body)
+//                            Spacer()
+//                            Text(country.dial_code).foregroundColor(Color(.systemGray3))
+//                        }
+//                        .onTapGesture {
+//                            authFlowManager.countryFlag = country.flag
+//                            authFlowManager.countryCode = country.dial_code
+//                            presentCountrySheet = false
+//                        }
+//                    }
+//               }
+//               .searchable(text: $searchText,  prompt: "Your Country Name")
+//               .presentationDetents([.fraction(0.76)])
+//            }
+        
+            .sheet(isPresented: $presentCountrySheet) {
+                NavigationStack {
+                    List {
+                        // Section for Top 3 Countries
+                        Section(header: Text("Popular Countries")) {
+                            ForEach(topCountries) { country in
+                                HStack {
+                                    Text(country.flag)
+                                    Text(country.name).font(.body)
+                                    Spacer()
+                                    Text(country.dial_code).foregroundColor(Color(.systemGray3))
+                                }
+                                .onTapGesture {
+                                    authFlowManager.countryFlag = country.flag
+                                    authFlowManager.countryCode = country.dial_code
+                                    presentCountrySheet = false
+                                }
+                            }
                         }
-                        .onTapGesture {
-                            self.countryFlag = model.flag
-                            self.countryCode = model.dial_code
-                            self.presentCountrySheet = false
+
+                        // Section for All Filtered Countries
+                        Section(header: Text("All Countries")) {
+                            ForEach(allCountries) { country in
+                                HStack {
+                                    Text(country.flag)
+                                    Text(country.name).font(.body)
+                                    Spacer()
+                                    Text(country.dial_code).foregroundColor(Color(.systemGray3))
+                                }
+                                .onTapGesture {
+                                    authFlowManager.countryFlag = country.flag
+                                    authFlowManager.countryCode = country.dial_code
+                                    presentCountrySheet = false
+                                }
+                            }
                         }
                     }
-               }
-               .searchable(text: $searchText,  prompt: "Your Country Name")
-               .presentationDetents([.fraction(0.77)])
+                }
+                .searchable(text: $searchText, prompt: "Your Country Name")
+                .presentationDetents([.fraction(0.76)])
             }
+
         }
     }
-}
 
 // Checkbox Style
 struct CheckboxToggleStyle: ToggleStyle {
@@ -201,7 +257,7 @@ struct CheckboxToggleStyle: ToggleStyle {
 // Preview
 struct LoginPageView_Previews: PreviewProvider {
     static var previews: some View {
-        LoginPageView()
+        LoginPageView().environmentObject(AuthFlowManager())
 //            .preferredColorScheme(.light)
     }
 }

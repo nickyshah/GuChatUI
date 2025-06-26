@@ -1,26 +1,27 @@
 import SwiftUI
 
-struct SplashScreenView: View{
+struct SplashScreenView: View {
     @State private var isActive = false
-    
-    var body: some View{
-        Group{
-            if isActive{
-                EntryPageView()
-            } else{
-                ZStack{
-                    Color.blue.edgesIgnoringSafeArea(.all)
+
+    var body: some View {
+        Group {
+            if isActive {
+                EntryPageView() // Transition to welcome screen
+            } else {
+                ZStack {
+                    Color.blue.ignoresSafeArea()
                     
-                    VStack{
+                    VStack {
                         Image("GuChatWhiteLogo")
                             .resizable()
-                            .frame(width: 180 ,height: 180)
+                            .scaledToFit()
+                            .frame(width: 180, height: 180)
                     }
-                    .onAppear{
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1){
-                            withAnimation{
-                                isActive = true
-                            }
+                }
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        withAnimation {
+                            isActive = true
                         }
                     }
                 }
@@ -28,6 +29,7 @@ struct SplashScreenView: View{
         }
     }
 }
+
 #Preview {
     SplashScreenView()
 }
