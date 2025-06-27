@@ -22,7 +22,7 @@ struct DateOfBirthView: View {
                     .padding(.horizontal)
                     .padding(.top, 10)
 
-                    NavigationLink(destination: UsernameView(), isActive: $navigateToPage1) {}
+//                    NavigationLink(destination: UsernameView(), isActive: $navigateToPage1) {}
 
                     // Title
                     Text("Enter Date of Birth")
