@@ -5,31 +5,35 @@ struct OTPVerificationView: View {
     @State private var digit2 = ""
     @State private var digit3 = ""
     @State private var digit4 = ""
-    
+
     @EnvironmentObject var authFlowManager: AuthFlowManager
-    
+
     @FocusState private var focusedField: Int?
-    
+
+    @State private var showValidationError = false
+    @State private var shakeFields = false
+    @State private var shakeButton = false
+
     private func updateOTP() {
-           authFlowManager.otp = digit1 + digit2 + digit3 + digit4
-       }
-    
+        authFlowManager.otp = digit1 + digit2 + digit3 + digit4
+    }
+
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Button {
                         authFlowManager.currentStep = .mobileRegistration
-                            } label: {
-                                Image(systemName: "arrow.backward")
-                                    .font(.title2)
-                                    .foregroundColor(.black)
-                            }
+                    } label: {
+                        Image(systemName: "arrow.backward")
+                            .font(.title2)
+                            .foregroundColor(.black)
+                    }
                     Spacer()
                 }
                 .padding(.horizontal)
                 .padding(.top, 20)
-                
+
                 Text("Verify Phone")
                     .font(.largeTitle)
                     .fontWeight(.semibold)
@@ -37,13 +41,13 @@ struct OTPVerificationView: View {
                     .padding(.horizontal)
                     .padding(.top, 20)
                     .padding(.bottom, 10)
-                
+
                 Text("Enter the verification code sent to your phone number")
                     .font(.body)
                     .foregroundColor(.gray)
                     .padding(.horizontal)
                     .padding(.bottom, 40)
-                
+
                 HStack(spacing: 15) {
                     Spacer()
                     otpTextField(text: $digit1, tag: 0)
@@ -53,15 +57,24 @@ struct OTPVerificationView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 20)
-                
+                .padding(.bottom, 10)
+                .modifier(ShakeEffect(animatableData: CGFloat(shakeFields ? 1 : 0)))
+
+                if showValidationError && authFlowManager.otp.count < 4 {
+                    Text("Please enter the 4-digit code")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.bottom, 10)
+                }
+
                 HStack(spacing: 0) {
                     Spacer()
                     Text("Didn't get the code? Tap here to ")
                         .foregroundColor(.gray)
                     Button("resend it") {
                         Task {
-                            await authFlowManager.requestOTP() // Resend OTP via AuthFlowManager
+                            await authFlowManager.requestOTP()
                         }
                     }
                     .foregroundColor(.blue)
@@ -70,13 +83,23 @@ struct OTPVerificationView: View {
                 .font(.subheadline)
                 .padding(.horizontal)
                 .padding(.bottom, 40)
-                
+
                 Spacer()
-                
+
                 Button(action: {
+                    if authFlowManager.otp.count < 4 {
+                        showValidationError = true
+                        shakeFields = true
+                        shakeButton = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            shakeFields = false
+                            shakeButton = false
+                        }
+                        return
+                    }
+
                     Task {
-                        authFlowManager.otp = digit1 + digit2 + digit3 + digit4
-                        await authFlowManager.verifyOTP() // Call AuthFlowManager API method
+                        await authFlowManager.verifyOTP()
                     }
                 }) {
                     Text(authFlowManager.isLoading ? "Verifying..." : "Verify")
@@ -84,10 +107,10 @@ struct OTPVerificationView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(authFlowManager.otp.count == 4 && !authFlowManager.isLoading ? Color.blue : Color.gray)
+                        .background(Color.blue)
                         .cornerRadius(10)
                 }
-                .disabled(authFlowManager.otp.count != 4 || authFlowManager.isLoading)
+                .modifier(ShakeEffect(animatableData: CGFloat(shakeButton ? 1 : 0)))
                 .padding(.horizontal)
                 .padding(.bottom, 20)
             }
@@ -104,7 +127,7 @@ struct OTPVerificationView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func otpTextField(text: Binding<String>, tag: Int) -> some View {
         TextField("", text: text)
@@ -122,17 +145,16 @@ struct OTPVerificationView: View {
             .focused($focusedField, equals: tag)
             .onChange(of: text.wrappedValue) { newValue in
                 let filtered = newValue.filter(\.isWholeNumber)
-                
-                //  Detect if user pasted multiple digits (e.g., "1234")
+
                 if filtered.count == 4 {
                     digit1 = String(filtered.prefix(1))
                     digit2 = String(filtered.dropFirst(1).prefix(1))
                     digit3 = String(filtered.dropFirst(2).prefix(1))
                     digit4 = String(filtered.dropFirst(3).prefix(1))
-                    focusedField = nil // Done
+                    focusedField = nil
                     return
                 }
-                
+
                 if filtered.count > 1 {
                     text.wrappedValue = String(filtered.prefix(1))
                 } else {
@@ -159,5 +181,3 @@ struct OTPVerificationView_Previews: PreviewProvider {
         OTPVerificationView().environmentObject(AuthFlowManager())
     }
 }
-
-

@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct LoginPageView: View {
+    @EnvironmentObject var authFlowManager: AuthFlowManager
+    
     @State private var rememberMe: Bool = false
     @State private var showingPassword: Bool = false
     @State private var searchText : String = ""
     @State private var presentCountrySheet: Bool = false
-    
-    @EnvironmentObject var authFlowManager: AuthFlowManager
     
     private var allCountries: [CPData]{
         if self.searchText.isEmpty {
@@ -28,10 +28,7 @@ struct LoginPageView: View {
             VStack(alignment: .leading, spacing: 0) {
                 
                 HStack {
-                    Button(action: {
-                        authFlowManager.currentStep = .mobileRegistration // Go back to registration start
-                        authFlowManager.errorMessage = nil // Clear error
-                    }) {
+                    NavigationLink(destination: EntryPageView().environmentObject(authFlowManager)) {
                         Image(systemName: "arrow.backward")
                             .font(.title2)
                             .foregroundColor(.black)
@@ -153,19 +150,18 @@ struct LoginPageView: View {
                     }
                     .disabled(authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
 
-                    Button {
-                            authFlowManager.currentStep = .mobileRegistration
-                        } label: {
-                            Text("Create Account")
-                                .frame(maxWidth: .infinity)
-                                .font(.title2)
-                                .foregroundColor(.black)
-                                .frame(minHeight: 50)
-                                .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 10))
-                        }
+                    NavigationLink(destination: CreateAccountView().environmentObject(authFlowManager)) {
+                        Text("Create Account")
+                            .frame(maxWidth: .infinity)
+                            .font(.title2)
+                            .foregroundColor(.black)
+                            .frame(minWidth:150, minHeight: 50)
+                            .background(Color(.systemGray4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 20)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
@@ -234,6 +230,5 @@ struct CheckboxToggleStyle: ToggleStyle {
 struct LoginPageView_Previews: PreviewProvider {
     static var previews: some View {
         LoginPageView().environmentObject(AuthFlowManager())
-//            .preferredColorScheme(.light)
     }
 }

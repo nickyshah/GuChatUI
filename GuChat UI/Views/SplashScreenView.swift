@@ -1,16 +1,16 @@
 import SwiftUI
 
 struct SplashScreenView: View {
-    @State private var isActive = false
+    @State private var showAuthFlow = false
 
     var body: some View {
         Group {
-            if isActive {
-                EntryPageView() // Transition to welcome screen
+            if showAuthFlow {
+                AuthenticationFlowView() // ✅ now environmentObject works
             } else {
                 ZStack {
                     Color.blue.ignoresSafeArea()
-                    
+
                     VStack {
                         Image("GuChatWhiteLogo")
                             .resizable()
@@ -21,7 +21,7 @@ struct SplashScreenView: View {
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         withAnimation {
-                            isActive = true
+                            showAuthFlow = true
                         }
                     }
                 }
@@ -30,6 +30,12 @@ struct SplashScreenView: View {
     }
 }
 
-#Preview {
-    SplashScreenView()
+// SwiftUI Preview
+struct SplashScreenView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            SplashScreenView().environmentObject(AuthFlowManager())
+        }
+    }
 }
+

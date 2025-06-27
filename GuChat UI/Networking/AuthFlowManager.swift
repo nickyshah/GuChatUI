@@ -5,6 +5,7 @@ import Combine
 class AuthFlowManager: ObservableObject{
     // Enum to define the steps in the registration and login flow
     enum CurrentStep: String, CaseIterable, Identifiable{
+        case entryPage
         case mobileRegistration // Step 1: Enter mobile, request OTP
         case otpVerification    // Step 2: Enter OTP, verify
         case usernameEntry      // Step 3: Enter username, check availability
@@ -39,7 +40,7 @@ class AuthFlowManager: ObservableObject{
         if APIManager.shared.authToken != nil {
             _currentStep = Published(initialValue: .authenticated)
         } else {
-            _currentStep = Published(initialValue: .mobileRegistration)
+            _currentStep = Published(initialValue: .entryPage)
         }
         
         // Observe changes in APIManager's auth token

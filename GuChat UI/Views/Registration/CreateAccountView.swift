@@ -7,13 +7,6 @@ struct CreateAccountView: View {
     @State private var searchText : String = ""
     
     @State private var agreesToTerms: Bool = false
-//
-//    @Environment(\.dismiss) private var dismiss
-//    @State private var navigate = false
-//
-//    @State private var mobileNumber: String = ""
-//    @State private var countryCode : String = "+61"
-//    @State private var countryFlag : String = "🇦🇺"
     @State private var presentCountrySheet: Bool = false
     
     private var allCountries: [CPData]{
@@ -27,12 +20,17 @@ struct CreateAccountView: View {
         
     }
     
+    private var topCountries: [CPData] {
+        let topDialCodes = ["+61", "+1"] // Example top countries: Australia, US
+        return CPData.allCountry.filter { topDialCodes.contains($0.dial_code) }
+    }
+    
     var body: some View {
         VStack(spacing: 20) {
 
             // Back button
             HStack {
-                NavigationLink(destination: EntryPageView()) {
+                NavigationLink(destination: EntryPageView().environmentObject(authFlowManager)) {
                     Image(systemName: "arrow.backward")
                         .font(.title2)
                         .foregroundColor(.black)
@@ -76,25 +74,46 @@ struct CreateAccountView: View {
                 
             }
             .padding(.horizontal)
-            .sheet(isPresented: $presentCountrySheet){
-               NavigationStack{
-                    List(allCountries) {
-                        model in
-                        HStack{
-                            Text(model.flag)
-                            Text(model.name).font(.body)
-                            Spacer()
-                            Text(model.dial_code).foregroundColor(Color(.systemGray3))
+            .sheet(isPresented: $presentCountrySheet) {
+                NavigationStack {
+                    List {
+                        // Section for Top 3 Countries
+                        Section(header: Text("Popular Countries")) {
+                            ForEach(topCountries) { country in
+                                HStack {
+                                    Text(country.flag)
+                                    Text(country.name).font(.body)
+                                    Spacer()
+                                    Text(country.dial_code).foregroundColor(Color(.systemGray3))
+                                }
+                                .onTapGesture {
+                                    authFlowManager.countryFlag = country.flag
+                                    authFlowManager.countryCode = country.dial_code
+                                    presentCountrySheet = false
+                                }
+                            }
                         }
-                        .onTapGesture {
-                            authFlowManager.countryFlag = model.flag // <-- Update AuthFlowManager
-                            authFlowManager.countryCode = model.dial_code // <-- Update AuthFlowManager
-                            self.presentCountrySheet = false
+
+                        // Section for All Filtered Countries
+                        Section(header: Text("All Countries")) {
+                            ForEach(allCountries) { country in
+                                HStack {
+                                    Text(country.flag)
+                                    Text(country.name).font(.body)
+                                    Spacer()
+                                    Text(country.dial_code).foregroundColor(Color(.systemGray3))
+                                }
+                                .onTapGesture {
+                                    authFlowManager.countryFlag = country.flag
+                                    authFlowManager.countryCode = country.dial_code
+                                    presentCountrySheet = false
+                                }
+                            }
                         }
                     }
-               }
-               .searchable(text: $searchText,  prompt: "Your Country Name")
-               .presentationDetents([.fraction(0.77)])
+                }
+                .searchable(text: $searchText, prompt: "Your Country Name")
+                .presentationDetents([.fraction(0.75)])
             }
 
             // Terms checkbox and text with links — no + concatenation, use HStack + Buttons + Text
@@ -117,16 +136,6 @@ struct CreateAccountView: View {
                 }
             }
             .padding(.horizontal)
-            Text("------------------or------------------")
-                .foregroundColor(.gray)
-                .padding(.vertical, 10)
-
-            Button("Create account with Email address") {
-                // Action required
-            }
-            .font(.headline)
-            .foregroundColor(.blue)
-
             Spacer()
 
             VStack(spacing: 15) {
@@ -155,7 +164,7 @@ struct CreateAccountView: View {
                         .padding(.horizontal)
                 }
                 
-                NavigationLink(destination: LoginPageView()) {
+                NavigationLink(destination: LoginPageView().environmentObject(authFlowManager)) {
                     Text("Login")
                         .frame(maxWidth: .infinity)
                         .font(.title2)
