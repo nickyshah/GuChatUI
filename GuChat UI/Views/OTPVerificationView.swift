@@ -1,24 +1,30 @@
 import SwiftUI
 
-struct VerifyPhonePageView: View {
+struct OTPVerificationView: View {
     @State private var digit1 = ""
     @State private var digit2 = ""
     @State private var digit3 = ""
     @State private var digit4 = ""
     
+    @EnvironmentObject var authFlowManager: AuthFlowManager
+    
     @FocusState private var focusedField: Int?
+    
+    private func updateOTP() {
+           authFlowManager.otp = digit1 + digit2 + digit3 + digit4
+       }
     
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Button {
-                        print("Back button tapped")
-                    } label: {
-                        Image(systemName: "arrow.backward")
-                            .font(.title2)
-                            .foregroundColor(.black)
-                    }
+                        authFlowManager.currentStep = .mobileRegistration
+                            } label: {
+                                Image(systemName: "arrow.backward")
+                                    .font(.title2)
+                                    .foregroundColor(.black)
+                            }
                     Spacer()
                 }
                 .padding(.horizontal)
@@ -53,11 +59,12 @@ struct VerifyPhonePageView: View {
                     Spacer()
                     Text("Didn't get the code? Tap here to ")
                         .foregroundColor(.gray)
-                    Text("resend it.")
-                        .foregroundColor(.blue)
-                        .onTapGesture {
-                            print("Resend code tapped")
+                    Button("resend it") {
+                        Task {
+                            await authFlowManager.requestOTP() // Resend OTP via AuthFlowManager
                         }
+                    }
+                    .foregroundColor(.blue)
                     Spacer()
                 }
                 .font(.subheadline)
@@ -66,23 +73,30 @@ struct VerifyPhonePageView: View {
                 
                 Spacer()
                 
-                Button {
-                    let code = digit1 + digit2 + digit3 + digit4
-                    print("Entered code: \(code)")
-                } label: {
-                    Text("Verify")
+                Button(action: {
+                    Task {
+                        authFlowManager.otp = digit1 + digit2 + digit3 + digit4
+                        await authFlowManager.verifyOTP() // Call AuthFlowManager API method
+                    }
+                }) {
+                    Text(authFlowManager.isLoading ? "Verifying..." : "Verify")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(authFlowManager.otp.count == 4 && !authFlowManager.isLoading ? Color.blue : Color.gray)
                         .cornerRadius(10)
                 }
+                .disabled(authFlowManager.otp.count != 4 || authFlowManager.isLoading)
                 .padding(.horizontal)
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
+            .onChange(of: digit1) { _ in updateOTP() }
+            .onChange(of: digit2) { _ in updateOTP() }
+            .onChange(of: digit3) { _ in updateOTP() }
+            .onChange(of: digit4) { _ in updateOTP() }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     focusedField = 0
@@ -107,47 +121,43 @@ struct VerifyPhonePageView: View {
             )
             .focused($focusedField, equals: tag)
             .onChange(of: text.wrappedValue) { newValue in
-                let filtered = newValue.filter { $0.isWholeNumber }
+                let filtered = newValue.filter(\.isWholeNumber)
                 
-                if filtered != newValue {
-                    DispatchQueue.main.async {
-                        text.wrappedValue = filtered
-                    }
+                //  Detect if user pasted multiple digits (e.g., "1234")
+                if filtered.count == 4 {
+                    digit1 = String(filtered.prefix(1))
+                    digit2 = String(filtered.dropFirst(1).prefix(1))
+                    digit3 = String(filtered.dropFirst(2).prefix(1))
+                    digit4 = String(filtered.dropFirst(3).prefix(1))
+                    focusedField = nil // Done
                     return
                 }
                 
                 if filtered.count > 1 {
-                    DispatchQueue.main.async {
-                        text.wrappedValue = String(filtered.prefix(1))
-                    }
-                    return
+                    text.wrappedValue = String(filtered.prefix(1))
+                } else {
+                    text.wrappedValue = filtered
                 }
-                
+
                 if filtered.count == 1 {
                     if tag < 3 {
-                        DispatchQueue.main.async {
-                            focusedField = tag + 1
-                        }
+                        focusedField = tag + 1
                     } else {
-                        DispatchQueue.main.async {
-                            focusedField = nil
-                        }
+                        focusedField = nil
                     }
-                }
-                
-                if filtered.isEmpty {
+                } else if filtered.isEmpty {
                     if tag > 0 {
-                        DispatchQueue.main.async {
-                            focusedField = tag - 1
-                        }
+                        focusedField = tag - 1
                     }
                 }
             }
     }
 }
 
-struct VerifyPhonePageView_Previews: PreviewProvider {
+struct OTPVerificationView_Previews: PreviewProvider {
     static var previews: some View {
-        VerifyPhonePageView()
+        OTPVerificationView().environmentObject(AuthFlowManager())
     }
 }
+
+

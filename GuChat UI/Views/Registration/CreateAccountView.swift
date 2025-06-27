@@ -188,7 +188,7 @@ struct CreateAccountView: View {
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
-            CreateAccountView()
+            CreateAccountView().environmentObject(AuthFlowManager())
         }
     }
 }

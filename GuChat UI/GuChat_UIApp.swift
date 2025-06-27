@@ -15,7 +15,7 @@ struct AuthenticationFlowView: View {
                 case .mobileRegistration:
                     CreateAccountView() // Your initial mobile number entry screen
                 case .otpVerification:
-                    VerifyPhonePageView() // OTP entry and verification
+                    OTPVerificationView() // OTP entry and verification
                 case .usernameEntry:
                     UsernameView() // Username creation and check
                 case .dobEntry:
