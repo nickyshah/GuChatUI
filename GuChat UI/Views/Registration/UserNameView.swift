@@ -15,7 +15,7 @@ struct UsernameView: View {
                 // Back Button
                 HStack {
                     Button(action: {
-                        authFlowManager.currentStep = .otpVerification
+                        authFlowManager.currentStep = .otpVerificationRegister
                         authFlowManager.errorMessage = nil
                         authFlowManager.usernameCheckError = nil
                         showFieldError = false

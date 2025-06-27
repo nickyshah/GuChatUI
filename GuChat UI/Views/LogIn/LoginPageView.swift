@@ -2,220 +2,258 @@ import SwiftUI
 
 struct LoginPageView: View {
     @EnvironmentObject var authFlowManager: AuthFlowManager
-    
+
     @State private var rememberMe: Bool = false
     @State private var showingPassword: Bool = false
-    @State private var searchText : String = ""
+    @State private var searchText: String = ""
     @State private var presentCountrySheet: Bool = false
-    
-    private var allCountries: [CPData]{
-        if self.searchText.isEmpty {
-            return CPData.allCountry
-        } else {
-            return CPData.allCountry.filter{
-                $0.name.contains(self.searchText)
-            }
-        }
-        
+
+    @State private var showMobileError = false
+    @State private var showPasswordError = false
+    @State private var shakeMobile = false
+    @State private var shakePassword = false
+
+    private var allCountries: [CPData] {
+        searchText.isEmpty
+            ? CPData.allCountry
+            : CPData.allCountry.filter { $0.name.contains(searchText) }
     }
-    
+
     private var topCountries: [CPData] {
-        let topDialCodes = ["+61", "+1"] // Example top countries: Australia, India, US
+        let topDialCodes = ["+61", "+1"]
         return CPData.allCountry.filter { topDialCodes.contains($0.dial_code) }
     }
 
     var body: some View {
-            VStack(alignment: .leading, spacing: 0) {
-                
-                HStack {
-                    NavigationLink(destination: EntryPageView().environmentObject(authFlowManager)) {
-                        Image(systemName: "arrow.backward")
-                            .font(.title2)
-                            .foregroundColor(.black)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top, 10)
-
-                // Title
-                Text("Login")
-                    .foregroundColor(.black)
-                    .font(.largeTitle)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal)
-                    .padding(.top, 20)
-                    .padding(.bottom, 30)
-
-                    // Form Fields
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("Mobile Number")
-                            .fontWeight(.bold)
-                            .font(.system(size: 22))
-                            .foregroundColor(.black)
-                        
-                        HStack{
-                            Button{
-                                self.presentCountrySheet = true
-                            }label: {
-                                Text("\(authFlowManager.countryFlag) \(authFlowManager.countryCode)")
-                                    .padding(10)
-                                    .frame(minWidth:80, minHeight: 40)
-                                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                    .foregroundColor(.black)
-                            }
-                            TextField("Enter Mobile Number", text: $authFlowManager.mobileNumber)
-                                .keyboardType(.numberPad)
-                                .padding(10)
-                                .frame(minWidth:150, minHeight: 40)
-                                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            
-                        }
-                    
-                    
-
-                    Text("Password")
-                        .fontWeight(.bold)
-                        .font(.system(size: 22))
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                NavigationLink(destination: EntryPageView().environmentObject(authFlowManager)) {
+                    Image(systemName: "arrow.backward")
+                        .font(.title2)
                         .foregroundColor(.black)
-
-                    HStack {
-                        if showingPassword {
-                            TextField("Enter password", text: $authFlowManager.password)
-                                .foregroundColor(.black)
-                        } else {
-                            SecureField("Enter password", text: $authFlowManager.password)
-                                .foregroundColor(.black)
-                        }
-
-                        Button(action: {
-                            showingPassword.toggle()
-                        }) {
-                            Image(systemName: showingPassword ? "eye.slash.fill" : "eye.fill")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(10)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-
-                    // Remember Me + Forgot Password
-                    HStack {
-                        Toggle(isOn: $rememberMe) {
-                            Text("Remember me")
-                        }
-                        .toggleStyle(CheckboxToggleStyle())
-                        .foregroundColor(.gray)
-
-                        Spacer()
-
-                        Button(action: {
-//                            Action is required to enter
-                            print("Forgot password tapped")
-                        }) {
-                            Text("Forgot password?")
-                                .foregroundColor(.blue)
-                                .font(.subheadline)
-                        }
-                    }
-                    .padding(.horizontal, 5)
-                        
-                        if let errorMessage = authFlowManager.errorMessage {
-                            Text(errorMessage)
-                                .foregroundColor(.red)
-                                .font(.caption)
-                                .padding(.top, 4)
-                        }
                 }
-                .padding(.horizontal)
-
                 Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, 10)
 
-                //  Action Buttons
-                VStack(spacing: 15) {
-                    Button(action: {
-                        Task{ await authFlowManager.login() }
-                    }) {
-                        Text(authFlowManager.isLoading ? "Logging in..." : "Login")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                        RoundedRectangle(cornerRadius: 10).fill(
-                                            (authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
-                                                ? Color.gray : Color.blue )
-                                    )
-
-                    }
-                    .disabled(authFlowManager.mobileNumber.isEmpty || authFlowManager.password.isEmpty || authFlowManager.isLoading)
-
-                    NavigationLink(destination: CreateAccountView().environmentObject(authFlowManager)) {
-                        Text("Create Account")
-                            .frame(maxWidth: .infinity)
-                            .font(.title2)
-                            .foregroundColor(.black)
-                            .frame(minWidth:150, minHeight: 50)
-                            .background(Color(.systemGray4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            
-                    }
-                }
+            Text("Login")
+                .font(.largeTitle)
+                .fontWeight(.semibold)
                 .padding(.horizontal)
-                .padding(.bottom, 20)
-            }
-            .navigationBarHidden(true)
-            .background(Color.white.edgesIgnoringSafeArea(.all))
-            .sheet(isPresented: $presentCountrySheet) {
-                NavigationStack {
-                    List {
-                        // Section for Top 3 Countries
-                        Section(header: Text("Popular Countries")) {
-                            ForEach(topCountries) { country in
-                                HStack {
-                                    Text(country.flag)
-                                    Text(country.name).font(.body)
-                                    Spacer()
-                                    Text(country.dial_code).foregroundColor(Color(.systemGray3))
-                                }
-                                .onTapGesture {
-                                    authFlowManager.countryFlag = country.flag
-                                    authFlowManager.countryCode = country.dial_code
-                                    presentCountrySheet = false
-                                }
-                            }
-                        }
+                .padding(.top, 20)
+                .padding(.bottom, 30)
 
-                        // Section for All Filtered Countries
-                        Section(header: Text("All Countries")) {
-                            ForEach(allCountries) { country in
-                                HStack {
-                                    Text(country.flag)
-                                    Text(country.name).font(.body)
-                                    Spacer()
-                                    Text(country.dial_code).foregroundColor(Color(.systemGray3))
-                                }
-                                .onTapGesture {
-                                    authFlowManager.countryFlag = country.flag
-                                    authFlowManager.countryCode = country.dial_code
-                                    presentCountrySheet = false
-                                }
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Mobile Number")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.black)
+
+                HStack {
+                    Button {
+                        presentCountrySheet = true
+                    } label: {
+                        Text("\(authFlowManager.countryFlag) \(authFlowManager.countryCode)")
+                            .padding(10)
+                            .background(Color.white)
+                            .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(showMobileError ? Color.red : Color(.systemGray4), lineWidth: 1)
+                            )
+                            .foregroundColor(.black)
+                    }
+
+                    TextField("Enter Mobile Number", text: $authFlowManager.mobileNumber)
+                        .keyboardType(.numberPad)
+                        .padding(10)
+                        .background(Color.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(showMobileError ? Color.red : Color(.systemGray4), lineWidth: 1)
+                        )
+                        .modifier(ShakeEffect(animatableData: CGFloat(shakeMobile ? 1 : 0)))
+                        .onChange(of: authFlowManager.mobileNumber) { newValue in
+                            if !newValue.isEmpty {
+                                showMobileError = false
                             }
                         }
+                }
+
+                if showMobileError {
+                    Text("Please enter your mobile number")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+
+                Text("Password")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.black)
+
+                HStack {
+                    if showingPassword {
+                        TextField("Enter password", text: $authFlowManager.password)
+                            .foregroundColor(.black)
+                    } else {
+                        SecureField("Enter password", text: $authFlowManager.password)
+                            .foregroundColor(.black)
+                    }
+
+                    Button {
+                        showingPassword.toggle()
+                    } label: {
+                        Image(systemName: showingPassword ? "eye.fill" : "eye.slash.fill")
+                            .foregroundColor(.gray)
                     }
                 }
-                .searchable(text: $searchText, prompt: "Your Country Name")
-                .presentationDetents([.fraction(0.75)])
-            }
+                .padding(10)
+                .background(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(showPasswordError ? Color.red : Color(.systemGray4), lineWidth: 1)
+                )
+                .cornerRadius(8)
+                .modifier(ShakeEffect(animatableData: CGFloat(shakePassword ? 1 : 0)))
+                .onChange(of: authFlowManager.password) { newValue in
+                    if !newValue.isEmpty {
+                        showPasswordError = false
+                    }
+                }
 
+                if showPasswordError {
+                    Text("Please enter your password")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+
+                HStack {
+                    Toggle(isOn: $rememberMe) {
+                        Text("Remember me")
+                    }
+                    .toggleStyle(CheckboxToggleStyle())
+                    .foregroundColor(.gray)
+
+                    Spacer()
+
+                    Button {
+                        if authFlowManager.mobileNumber.isEmpty {
+                            showMobileError = true
+                            shakeMobile = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                shakeMobile = false
+                            }
+                            return}
+                        Task{
+                            let success = await authFlowManager.requestOTP(forReset: true)
+                        }
+                    } label: {
+                        Text("Forgot password?")
+                            .foregroundColor(.blue)
+                            .font(.subheadline)
+                    }
+                }
+                .padding(.horizontal, 5)
+            }
+            .padding(.horizontal)
+
+            Spacer()
+
+            VStack(spacing: 15) {
+                Button {
+                    withAnimation {
+                        if authFlowManager.mobileNumber.isEmpty {
+                            showMobileError = true
+                            shakeMobile = true
+                        } else {
+                            showMobileError = false
+                        }
+
+                        if authFlowManager.password.isEmpty {
+                            showPasswordError = true
+                            shakePassword = true
+                        } else {
+                            showPasswordError = false
+                        }
+                    }
+
+                    if !authFlowManager.mobileNumber.isEmpty && !authFlowManager.password.isEmpty {
+                        Task {
+                            await authFlowManager.login()
+                        }
+                    }
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        shakeMobile = false
+                        shakePassword = false
+                    }
+                } label: {
+                    Text(authFlowManager.isLoading ? "Logging in..." : "Login")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
+                .disabled(authFlowManager.isLoading)
+
+                NavigationLink(destination: CreateAccountView().environmentObject(authFlowManager)) {
+                    Text("Create Account")
+                        .font(.headline)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(Color(.systemGray4), in: RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+        }
+        .navigationBarHidden(true)
+        .background(Color.white.ignoresSafeArea())
+        .sheet(isPresented: $presentCountrySheet) {
+            countrySelectionSheet
         }
     }
 
-// Checkbox Style
+    var countrySelectionSheet: some View {
+        NavigationStack {
+            List {
+                Section(header: Text("Popular Countries")) {
+                    ForEach(topCountries) { country in
+                        countryRow(country)
+                    }
+                }
+
+                Section(header: Text("All Countries")) {
+                    ForEach(allCountries) { country in
+                        countryRow(country)
+                    }
+                }
+            }
+        }
+        .searchable(text: $searchText, prompt: "Your Country Name")
+        .presentationDetents([.fraction(0.75)])
+    }
+
+    func countryRow(_ country: CPData) -> some View {
+        HStack {
+            Text(country.flag)
+            Text(country.name).font(.body)
+            Spacer()
+            Text(country.dial_code).foregroundColor(Color(.systemGray3))
+        }
+        .onTapGesture {
+            authFlowManager.countryFlag = country.flag
+            authFlowManager.countryCode = country.dial_code
+            presentCountrySheet = false
+        }
+    }
+}
+
 struct CheckboxToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
-        Button(action: {
+        Button {
             configuration.isOn.toggle()
-        }) {
+        } label: {
             HStack {
                 Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
                     .foregroundColor(configuration.isOn ? .blue : .gray)

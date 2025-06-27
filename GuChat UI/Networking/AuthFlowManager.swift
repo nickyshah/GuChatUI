@@ -7,10 +7,12 @@ class AuthFlowManager: ObservableObject{
     enum CurrentStep: String, CaseIterable, Identifiable{
         case entryPage
         case mobileRegistration // Step 1: Enter mobile, request OTP
-        case otpVerification    // Step 2: Enter OTP, verify
+        case otpVerificationRegister   // otpVerification`
+        case otpVerificationReset      // For reset password flow
         case usernameEntry      // Step 3: Enter username, check availability
         case dobEntry           // Step 4: Enter Date of Birth
         case createPassword     // Step 5: Create password, final registration
+        case resetPassword          // For resetting password after OTP
         case login              // Separate path for direct login
         case authenticated      // User is fully authenticated and logged in
 
@@ -121,7 +123,7 @@ class AuthFlowManager: ObservableObject{
         }
     }
     
-    func requestOTP() async {
+    func requestOTP(forReset: Bool = false) async {
         isLoading = true
         errorMessage = nil
         
@@ -129,7 +131,7 @@ class AuthFlowManager: ObservableObject{
             _ = try await APIManager.shared.requestOTP(mobileNumber: mobileNumber)
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.currentStep = .otpVerification // advance to the OTP Verification
+                self.currentStep = forReset ? .otpVerificationReset : .otpVerificationRegister // advance to the OTP Verification
             }
         } catch {
             DispatchQueue.main.async{
@@ -149,7 +151,11 @@ class AuthFlowManager: ObservableObject{
             DispatchQueue.main.async {
                 self.isLoading = false
                 if response.success {
-                    self.currentStep = .usernameEntry // advance to the username entry
+                    if self.currentStep == .otpVerificationRegister {
+                        self.currentStep = .usernameEntry
+                    } else if self.currentStep == .otpVerificationReset {
+                            self.currentStep = .resetPassword
+                        }
                 } else {
                     self.errorMessage = response.message ?? "OTP Verification Failed. Please try again."
                 }

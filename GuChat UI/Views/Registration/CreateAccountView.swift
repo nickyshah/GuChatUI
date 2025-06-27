@@ -1,33 +1,37 @@
-import SwiftUI
+ import SwiftUI
 
 struct CreateAccountView: View {
     
-    @EnvironmentObject var authFlowManager: AuthFlowManager // <-- Add this
-    @StateObject private var countryVM = CountryCodeViewModel() // Keep ViewModel for countries
-    @State private var searchText : String = ""
+    @EnvironmentObject var authFlowManager: AuthFlowManager
+    @StateObject private var countryVM = CountryCodeViewModel()
+    @State private var searchText: String = ""
     
     @State private var agreesToTerms: Bool = false
     @State private var presentCountrySheet: Bool = false
     
-    private var allCountries: [CPData]{
+    // Validation states
+    @State private var showMobileError = false
+    @State private var shakeMobile = false
+    @State private var shakeButton = false
+    @State private var showCheckboxError = false
+    @State private var shakeCheckbox = false
+    
+    private var allCountries: [CPData] {
         if self.searchText.isEmpty {
             return CPData.allCountry
         } else {
-            return CPData.allCountry.filter{
-                $0.name.contains(self.searchText)
-            }
+            return CPData.allCountry.filter { $0.name.contains(self.searchText) }
         }
-        
     }
     
     private var topCountries: [CPData] {
-        let topDialCodes = ["+61", "+1"] // Example top countries: Australia, US
+        let topDialCodes = ["+61", "+1"]
         return CPData.allCountry.filter { topDialCodes.contains($0.dial_code) }
     }
     
     var body: some View {
         VStack(spacing: 20) {
-
+            
             // Back button
             HStack {
                 NavigationLink(destination: EntryPageView().environmentObject(authFlowManager)) {
@@ -39,45 +43,64 @@ struct CreateAccountView: View {
             }
             .padding(.horizontal)
             .padding(.top, 10)
-
+            
             // Title
             Text("Create account")
                 .font(.largeTitle)
                 .fontWeight(.medium)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-
+            
             VStack(alignment: .leading, spacing: 10) {
                 Text("Mobile Number")
                     .fontWeight(.medium)
                     .font(.system(size: 22))
                     .foregroundColor(.black)
                 
-                HStack{
-                    Button{
-                        print("Open Country Picker ")
+                HStack {
+                    Button {
                         self.presentCountrySheet = true
-                    }label: {
+                    } label: {
                         Text("\(authFlowManager.countryFlag) \(authFlowManager.countryCode)")
                             .padding(10)
-                            .frame(minWidth:80, minHeight: 40)
-                            .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .frame(minWidth: 80, minHeight: 40)
+                            .background(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(showMobileError ? Color.red : Color(.systemGray4), lineWidth: 1)
+                            )
                             .foregroundColor(.black)
                     }
+                    
                     TextField("Enter your mobile number", text: $authFlowManager.mobileNumber)
                         .keyboardType(.numberPad)
                         .padding(10)
-                        .frame(minWidth:150, minHeight: 40)
-                        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .frame(minWidth: 150, minHeight: 40)
+                        .background(Color.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(showMobileError ? Color.red : Color(.systemGray4), lineWidth: 1)
+                        )
+                        .modifier(ShakeEffect(animatableData: CGFloat(shakeMobile ? 1 : 0)))
+                        .onChange(of: authFlowManager.mobileNumber) { _ in
+                            if showMobileError {
+                                showMobileError = false
+                            }
+                        }
                 }
                 .padding(.horizontal, 5)
                 
+                if showMobileError {
+                    Text("Please enter your mobile number")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .padding(.leading, 10)
+                }
             }
             .padding(.horizontal)
             .sheet(isPresented: $presentCountrySheet) {
                 NavigationStack {
                     List {
-                        // Section for Top 3 Countries
                         Section(header: Text("Popular Countries")) {
                             ForEach(topCountries) { country in
                                 HStack {
@@ -93,8 +116,7 @@ struct CreateAccountView: View {
                                 }
                             }
                         }
-
-                        // Section for All Filtered Countries
+                        
                         Section(header: Text("All Countries")) {
                             ForEach(allCountries) { country in
                                 HStack {
@@ -115,18 +137,26 @@ struct CreateAccountView: View {
                 .searchable(text: $searchText, prompt: "Your Country Name")
                 .presentationDetents([.fraction(0.75)])
             }
-
-            // Terms checkbox and text with links — no + concatenation, use HStack + Buttons + Text
+            
+            // Terms checkbox and text
             HStack(alignment: .center, spacing: 8) {
                 Button(action: {
                     agreesToTerms.toggle()
+                    if showCheckboxError && agreesToTerms {
+                        showCheckboxError = false
+                    }
                 }) {
                     Image(systemName: agreesToTerms ? "checkmark.square.fill" : "square")
                         .foregroundColor(agreesToTerms ? .blue : .gray)
                         .font(.title3)
                 }
+                .modifier(ShakeEffect(animatableData: CGFloat(shakeCheckbox ? 1 : 0)))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(showCheckboxError ? Color.red : Color.clear, lineWidth: 2)
+                )
                 
-                HStack(spacing:0){
+                HStack(spacing: 0) {
                     Text("By clicking you agree to ") +
                     Text("[Terms of Service]()")
                         .foregroundStyle(.blue) +
@@ -136,30 +166,60 @@ struct CreateAccountView: View {
                 }
             }
             .padding(.horizontal)
+            
+            if showCheckboxError {
+                Text("You must agree to the Terms of Service and Privacy Policy")
+                    .foregroundColor(.red)
+                    .font(.caption)
+                    .padding(.leading, 10)
+            }
+            
             Spacer()
-
+            
             VStack(spacing: 15) {
                 Button(action: {
-                    Task{
+                    var hasError = false
+                    
+                    if authFlowManager.mobileNumber.isEmpty {
+                        showMobileError = true
+                        shakeMobile = true
+                        hasError = true
+                    }
+                    if !agreesToTerms {
+                        showCheckboxError = true
+                        shakeCheckbox = true
+                        hasError = true
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        shakeMobile = false
+                        shakeCheckbox = false
+                        shakeButton = false
+                    }
+                    
+                    if hasError {
+                        shakeButton = true
+                        return
+                    }
+                    
+                    Task {
                         await authFlowManager.requestOTP()
                     }
                 }) {
-                    Text(authFlowManager.isLoading ? "Sending OTP..." : "Create account")
+                    Text(authFlowManager.isLoading ? "Sending OTP..." : "Create Account")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(agreesToTerms && !authFlowManager.mobileNumber.isEmpty && !authFlowManager.isLoading ? Color.blue : Color.gray)
+                        .background(Color.blue)
                         .cornerRadius(10)
                 }
-                .disabled(!agreesToTerms || authFlowManager.mobileNumber.isEmpty || authFlowManager.isLoading)
-
+                .modifier(ShakeEffect(animatableData: CGFloat(shakeButton ? 1 : 0)))
                 
-                // Display general error message
                 if let errorMessage = authFlowManager.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
-                        .font(.caption)
+                        .font(.headline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                 }
@@ -169,9 +229,8 @@ struct CreateAccountView: View {
                         .frame(maxWidth: .infinity)
                         .font(.title2)
                         .foregroundColor(.black)
-                        .frame(minWidth:150, minHeight: 50)
+                        .frame(minWidth: 150, minHeight: 50)
                         .background(Color(.systemGray4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        
                 }
             }
             .padding(.horizontal)
@@ -180,20 +239,18 @@ struct CreateAccountView: View {
         .navigationBarHidden(true)
         .background(Color.white.ignoresSafeArea())
         .onAppear {
-            countryVM.load() // Load country codes when view appears
-            // Set default selected code to Australia if available and not already set
+            countryVM.load()
             if authFlowManager.countryCode == "+61" && authFlowManager.countryFlag == "🇦🇺" && authFlowManager.mobileNumber.isEmpty {
-                 if let australia = CPData.allCountry.first(where: { $0.name == "Australia" }) {
-                     authFlowManager.countryCode = australia.dial_code
-                     authFlowManager.countryFlag = australia.flag
-                 }
+                if let australia = CPData.allCountry.first(where: { $0.name == "Australia" }) {
+                    authFlowManager.countryCode = australia.dial_code
+                    authFlowManager.countryFlag = australia.flag
+                }
             }
         }
     }
-    
 }
 
-// SwiftUI Preview
+// Preview
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {

@@ -43,6 +43,10 @@ struct AuthenticatedHomeView: View {
     }
 }
 
-#Preview {
-    AuthenticatedHomeView()
+struct AuthenticatedHomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            AuthenticatedHomeView().environmentObject(AuthFlowManager())
+        }
+    }
 }

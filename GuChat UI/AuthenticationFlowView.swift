@@ -9,22 +9,25 @@ struct AuthenticationFlowView: View {
         NavigationStack {
             Group {
                 switch authFlowManager.currentStep {
-                case .entryPage:
-                    EntryPageView()
-                case .mobileRegistration:
-                    CreateAccountView() // Your initial mobile number entry screen
-                case .otpVerification:
-                    OTPVerificationView() // OTP entry and verification
-                case .usernameEntry:
-                    UsernameView() // Username creation and check
-                case .dobEntry:
-                    DateOfBirthView() // Date of birth entry
-                case .createPassword:
-                    CreatePasswordView() // Password creation and final registration
-                case .login:
-                    LoginPageView() // Separate login path
-                case .authenticated:
-                    AuthenticatedHomeView() // Landing page after successful auth
+                    
+                    case .otpVerificationReset, .otpVerificationRegister:
+                        OTPVerificationView()       // OTP entry and verification
+                    case .entryPage:
+                        EntryPageView()
+                    case .mobileRegistration:
+                        CreateAccountView() // Your initial mobile number entry screen
+                    case .usernameEntry:
+                        UsernameView() // Username creation and check
+                    case .dobEntry:
+                        DateOfBirthView() // Date of birth entry
+                    case .createPassword:
+                        CreatePasswordView() // Password creation and final registration
+                    case .login:
+                        LoginPageView() // Separate login path
+                    case .authenticated:
+                        AuthenticatedHomeView() // Landing page after successful auth
+                    case .resetPassword:
+                        ResetPasswordPageView() // Landing page for the reset password
                 }
             }
             .environmentObject(authFlowManager) // Inject AuthFlowManager into the environment
