@@ -9,6 +9,7 @@ enum NetworkError: Error, LocalizedError{
     case serverError(statusCode: Int, message: String)
     case authenticationError // For 401 Unauthorized
     case unknown(Error)
+    case invalidResponse
 
     var errorDescription: String? {
         switch self {
@@ -18,6 +19,7 @@ enum NetworkError: Error, LocalizedError{
         case .serverError(let statusCode, let message): return "Server error \(statusCode): \(message)"
         case .authenticationError: return "Authentication required or failed."
         case .unknown(let error): return "An unknown error occurred: \(error.localizedDescription)"
+        case .invalidResponse: return "Invalid server response format."
         }
     }
 }
@@ -178,16 +180,39 @@ class APIManager: ObservableObject {
     }
     
     func login(mobileNumber: String, password: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)api/user/signin") else { throw NetworkError.invalidURL }
-        let body: [String: String] = ["mobileNumber": mobileNumber, "password": password]
-        let response: AuthResponse = try await performRequest(url: url, method: "POST", body: body)
-        // Store token and userId upon successful login
-        if response.success, let token = response.token, let userId = response.userId {
+        guard let url = URL(string: "\(baseURL)api/user/signin") else {
+            throw NetworkError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        let bodyComponents = [
+            "email=\(mobileNumber)",
+            "password=\(password)",
+            "login_type=Phone"
+        ]
+        let bodyString = bodyComponents.joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+            throw NetworkError.invalidResponse
+        }
+
+        let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
+
+        // Store token and userId if login is successful
+        if authResponse.success, let token = authResponse.token, let userId = authResponse.userId {
             self.authToken = token
             self.currentUserId = userId
         }
-        return response
+
+        return authResponse
     }
+
     
     
     func logout(){
