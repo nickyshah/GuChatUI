@@ -57,8 +57,9 @@ struct EntryPageView: View {
                     }.padding(.top, 20)
                 }
             }
-        }
+        }.navigationBarBackButtonHidden(true)
     }
+
  
 }
 

@@ -232,8 +232,10 @@ class AuthFlowManager: ObservableObject{
         isLoading = true
         errorMessage = nil
         
+        let fullMobileNumber = "\(countryCode)\(mobileNumber.trimmingCharacters(in: .whitespaces))"
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
-            _ = try await APIManager.shared.login(mobileNumber: mobileNumber, password: password)
+            _ = try await APIManager.shared.login(mobileNumber: fullMobileNumber, password: trimmedPassword)
             DispatchQueue.main.async{
                 self.isLoading = false
                 self.currentStep = .authenticated // Login Successful

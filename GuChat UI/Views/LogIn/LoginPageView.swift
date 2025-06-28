@@ -159,6 +159,7 @@ struct LoginPageView: View {
 
             VStack(spacing: 15) {
                 Button {
+                    print("Password is:  \(authFlowManager.password)")
                     withAnimation {
                         if authFlowManager.mobileNumber.isEmpty {
                             showMobileError = true

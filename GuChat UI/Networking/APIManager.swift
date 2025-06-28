@@ -126,7 +126,7 @@ class APIManager: ObservableObject {
     // --- API Methods for the Auth Flow ---
     
     func requestOTP(mobileNumber: String) async throws -> APIResponse {
-        guard let url = URL(string: "\(baseURL)api/user/verification/get")
+        guard let url = URL(string: "\(baseURL)api/user/verification/")
         else {
             throw NetworkError.invalidURL
         }
